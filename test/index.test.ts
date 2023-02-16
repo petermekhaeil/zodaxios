@@ -124,17 +124,6 @@ it('should return error for failed json parse', async () => {
   );
 });
 
-it.skip('should support baseURL when set in instance', async () => {});
-it.skip('should support headers when set in instance', async () => {});
-it.skip('should support auth when set in instance', async () => {});
-it.skip('should support baseURL when set in request config', async () => {});
-it.skip('should support headers when set in request config', async () => {});
-it.skip('should support auth when set in request config', async () => {});
-it.skip('should support request body (post)', async () => {});
-it.skip('should support request body (patch)', async () => {});
-it.skip('should support FormData', async () => {});
-it.skip('should support params', async () => {});
-
 it('should support config as first parameter', async () => {
   server.use(
     rest.get('https://example.com', (req, res, ctx) => {
@@ -155,5 +144,55 @@ it('should support config as first parameter', async () => {
   expect(data).toEqual({ name: 'zodaxios' });
 });
 
+it('should support request body (post)', async () => {
+  server.use(
+    rest.post('https://example.com', async (req, res, ctx) => {
+      const body = await req.json();
+      return res(ctx.status(200), ctx.json(body));
+    })
+  );
+
+  const api = zodaxios.create({
+    baseURL: 'https://example.com'
+  });
+
+  const schema = z.object({
+    name: z.string()
+  });
+
+  const { data } = await api.post('/', { name: 'zodaxios' }, { schema });
+
+  expect(data).toEqual({ name: 'zodaxios' });
+});
+
+it('should support request body (patch)', async () => {
+  server.use(
+    rest.patch('https://example.com', async (req, res, ctx) => {
+      const body = await req.json();
+      return res(ctx.status(200), ctx.json(body));
+    })
+  );
+
+  const api = zodaxios.create({
+    baseURL: 'https://example.com'
+  });
+
+  const schema = z.object({
+    name: z.string()
+  });
+
+  const { data } = await api.patch('/', { name: 'zodaxios' }, { schema });
+
+  expect(data).toEqual({ name: 'zodaxios' });
+});
+
+it.skip('should support baseURL when set in instance', async () => {});
+it.skip('should support headers when set in instance', async () => {});
+it.skip('should support auth when set in instance', async () => {});
+it.skip('should support baseURL when set in request config', async () => {});
+it.skip('should support headers when set in request config', async () => {});
+it.skip('should support auth when set in request config', async () => {});
+it.skip('should support FormData', async () => {});
+it.skip('should support params', async () => {});
 it.skip('should support url as first parameter', async () => {});
 it.skip('should support stream response type', async () => {});
