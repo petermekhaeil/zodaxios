@@ -6,14 +6,6 @@ HTTP client with schema validation using [Zod](https://zod.dev/).
 - No dependencies.
 - [Axios](https://github.com/axios/axios) style API.
 
-## Installation
-
-```shell
-npm install zodaxios
-yarn add zodaxios
-pnpm add zodaxios
-```
-
 ## Usage
 
 ```js
