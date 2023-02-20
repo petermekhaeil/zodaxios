@@ -186,6 +186,27 @@ it('should support request body (patch)', async () => {
   expect(data).toEqual({ name: 'zodaxios' });
 });
 
+it('should support request body (put)', async () => {
+  server.use(
+    rest.put('https://example.com', async (req, res, ctx) => {
+      const body = await req.json();
+      return res(ctx.status(200), ctx.json(body));
+    })
+  );
+
+  const api = zodaxios.create({
+    baseURL: 'https://example.com'
+  });
+
+  const schema = z.object({
+    name: z.string()
+  });
+
+  const { data } = await api.put('/', { name: 'zodaxios' }, { schema });
+
+  expect(data).toEqual({ name: 'zodaxios' });
+});
+
 it.skip('should support baseURL when set in instance', async () => {});
 it.skip('should support headers when set in instance', async () => {});
 it.skip('should support auth when set in instance', async () => {});

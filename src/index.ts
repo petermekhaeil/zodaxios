@@ -10,7 +10,7 @@ interface RequestConfig<TData> {
   schema?: Schema<TData>;
   responseType?: 'json' | 'text';
   url?: string;
-  method?: 'get' | 'post';
+  method?: 'get' | 'post' | 'patch' | 'put';
 }
 
 type Response<TData> = {
@@ -32,13 +32,14 @@ interface Zodaxios {
   <TData>(
     configOrUrl: RequestConfig<TData> | string,
     config?: RequestConfig<TData>,
-    method?: 'get' | 'post' | 'patch',
+    method?: 'get' | 'post' | 'patch' | 'put',
     data?: any
   ): Promise<Response<TData>>;
   create(defaults?: ConfigDefaults): Zodaxios;
   get: BodylessMethod;
   post: BodyMethod;
   patch: BodyMethod;
+  put: BodyMethod;
 }
 
 function create(defaults: ConfigDefaults = {}) {
@@ -101,6 +102,7 @@ function create(defaults: ConfigDefaults = {}) {
   zodaxios.get = (url, config) => zodaxios(url, config, 'get');
   zodaxios.post = (url, data, config) => zodaxios(url, config, 'post', data);
   zodaxios.patch = (url, data, config) => zodaxios(url, config, 'patch', data);
+  zodaxios.put = (url, data, config) => zodaxios(url, config, 'put', data);
 
   return zodaxios;
 }
