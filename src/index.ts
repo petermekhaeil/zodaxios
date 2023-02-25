@@ -11,6 +11,7 @@ interface RequestConfig<TData> {
   responseType?: 'json' | 'text';
   url?: string;
   method?: 'get' | 'post' | 'patch' | 'put';
+  params?: Record<string, string> | URLSearchParams;
 }
 
 type Response<TData> = {
@@ -74,6 +75,12 @@ function create(defaults: ConfigDefaults = {}) {
         /^(?!.*\/\/)\/?/,
         options.baseURL + '/'
       );
+    }
+
+    if (options.params) {
+      config.url +=
+        (config.url.indexOf('?') === -1 ? '?' : '&') +
+        new URLSearchParams(options.params);
     }
 
     if (body && typeof body === 'object') {

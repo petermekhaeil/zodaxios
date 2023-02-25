@@ -207,6 +207,86 @@ it('should support request body (put)', async () => {
   expect(data).toEqual({ name: 'zodaxios' });
 });
 
+it('should support params', async () => {
+  server.use(
+    rest.get('https://example.com/api', (req, res, ctx) => {
+      const params = Object.fromEntries(req.url.searchParams);
+      return res(ctx.json(params), ctx.status(200));
+    })
+  );
+
+  const api = zodaxios.create({
+    baseURL: 'https://example.com'
+  });
+
+  const schema = z.object({
+    name: z.string()
+  });
+
+  const params = { name: 'zodaxios' };
+
+  const { data } = await api.get('/api', {
+    schema,
+    params
+  });
+
+  expect(data).toEqual({ name: 'zodaxios' });
+});
+
+it('should merge params', async () => {
+  server.use(
+    rest.get('https://example.com/api', (req, res, ctx) => {
+      const params = Object.fromEntries(req.url.searchParams);
+      return res(ctx.json(params), ctx.status(200));
+    })
+  );
+
+  const api = zodaxios.create({
+    baseURL: 'https://example.com'
+  });
+
+  const schema = z.object({
+    name: z.string(),
+    id: z.string()
+  });
+
+  const params = { name: 'zodaxios' };
+
+  const { data } = await api.get('/api?id=1', {
+    schema,
+    params
+  });
+
+  expect(data).toEqual({ id: '1', name: 'zodaxios' });
+});
+
+it('should accept URLSearchParams as params', async () => {
+  server.use(
+    rest.get('https://example.com/api', (req, res, ctx) => {
+      const params = Object.fromEntries(req.url.searchParams);
+      return res(ctx.json(params), ctx.status(200));
+    })
+  );
+
+  const api = zodaxios.create({
+    baseURL: 'https://example.com'
+  });
+
+  const schema = z.object({
+    name: z.string(),
+    id: z.string()
+  });
+
+  const params = new URLSearchParams({ name: 'zodaxios' });
+
+  const { data } = await api.get('/api?id=1', {
+    schema,
+    params
+  });
+
+  expect(data).toEqual({ id: '1', name: 'zodaxios' });
+});
+
 it.skip('should support baseURL when set in instance', async () => {});
 it.skip('should support headers when set in instance', async () => {});
 it.skip('should support auth when set in instance', async () => {});
@@ -214,6 +294,5 @@ it.skip('should support baseURL when set in request config', async () => {});
 it.skip('should support headers when set in request config', async () => {});
 it.skip('should support auth when set in request config', async () => {});
 it.skip('should support FormData', async () => {});
-it.skip('should support params', async () => {});
 it.skip('should support url as first parameter', async () => {});
 it.skip('should support stream response type', async () => {});
