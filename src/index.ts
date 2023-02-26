@@ -12,6 +12,7 @@ interface RequestConfig<TData> {
   url?: string;
   method?: 'get' | 'post' | 'patch' | 'put';
   params?: Record<string, string> | URLSearchParams;
+  withCredentials?: boolean;
 }
 
 type Response<TData> = {
@@ -88,7 +89,12 @@ function create(defaults: ConfigDefaults = {}) {
       headers['content-type'] = 'application/json';
     }
 
-    const response = await fetch(config.url, { method, body, headers });
+    const response = await fetch(config.url, {
+      method,
+      body,
+      headers,
+      credentials: options.withCredentials ? 'include' : undefined
+    });
 
     if (!response.ok) {
       throw new Error(`Request failed with status ${response.status}`);
