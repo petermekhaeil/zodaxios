@@ -3,9 +3,10 @@ import { z } from 'zod';
 import zodaxios, { ZodaxiosError } from '../src/index';
 import { setupServer } from 'msw/node';
 import { rest } from 'msw';
-import fetch from 'cross-fetch';
+import fetch, { Headers } from 'cross-fetch';
 
 global.fetch = fetch;
+global.Headers = Headers;
 
 const server = setupServer();
 beforeAll(() => server.listen());
