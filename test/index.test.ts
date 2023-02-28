@@ -1,6 +1,6 @@
 import { afterAll, afterEach, beforeAll, expect, it } from 'vitest';
 import { z } from 'zod';
-import zodaxios from '../src/index';
+import zodaxios, { ZodaxiosError } from '../src/index';
 import { setupServer } from 'msw/node';
 import { rest } from 'msw';
 import fetch from 'cross-fetch';
@@ -47,7 +47,13 @@ it('should throw error on 404', async () => {
     name: z.string()
   });
 
-  expect(() => api.get('/', { schema })).rejects.toThrowError();
+  try {
+    await api.get('/', { schema });
+  } catch (e) {
+    expect(e.response.config).toEqual({ schema, url: 'https://example.com/' });
+    expect(e.response.status).toEqual(404);
+    expect(e.response.headers.get('content-type')).toEqual('application/json');
+  }
 });
 
 it('should throw error if schema does not match', async () => {
@@ -65,8 +71,10 @@ it('should throw error if schema does not match', async () => {
     name: z.number()
   });
 
-  expect(() => api.get('/', { schema })).rejects.toMatchObject(
-    z.ZodError.create([
+  try {
+    await api.get('/', { schema });
+  } catch (e) {
+    const expectedError = z.ZodError.create([
       {
         code: 'invalid_type',
         expected: 'number',
@@ -74,8 +82,12 @@ it('should throw error if schema does not match', async () => {
         path: ['name'],
         message: 'Expected number, received string'
       }
-    ])
-  );
+    ]);
+    expect(e).instanceOf(ZodaxiosError);
+    expect((e as ZodaxiosError).cause).toBeInstanceOf(z.ZodError);
+    expect((e as ZodaxiosError).cause).toEqual(expectedError);
+    expect((e as ZodaxiosError).message).toBe(expectedError.message);
+  }
 });
 
 it('should handle text response', async () => {
@@ -111,8 +123,10 @@ it('should return error for failed json parse', async () => {
     name: z.string()
   });
 
-  expect(() => api.get('/', { schema })).rejects.toMatchObject(
-    z.ZodError.create([
+  try {
+    await api.get('/', { schema });
+  } catch (e) {
+    const expectedError = z.ZodError.create([
       {
         code: 'invalid_type',
         expected: 'object',
@@ -120,8 +134,12 @@ it('should return error for failed json parse', async () => {
         path: [],
         message: 'Required'
       }
-    ])
-  );
+    ]);
+    expect(e).instanceOf(ZodaxiosError);
+    expect((e as ZodaxiosError).cause).toBeInstanceOf(z.ZodError);
+    expect((e as ZodaxiosError).cause).toEqual(expectedError);
+    expect((e as ZodaxiosError).message).toBe(expectedError.message);
+  }
 });
 
 it('should support config as first parameter', async () => {

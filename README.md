@@ -36,9 +36,18 @@ const { data } = await api.get('/api', { schema });
 ## Handling errors
 
 ```js
+import zodaxios, { ZodaxiosError } from 'zodaxios';
+
 try {
-  const { data } = await api.get('/', { schema });
+  const { data } = await api.get('/api', { schema });
 } catch (error) {
-  //     ^? error instanceof ZodError
+  if (error instanceof ZodaxiosError) {
+    // Zod validation failed. The schema did not match
+    // the response data from the server.
+    console.log('Validation failed', { error });
+  } else if (error.response) {
+    // The server responded with an error
+    console.log('Error from server', { response });
+  }
 }
 ```

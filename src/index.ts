@@ -1,5 +1,7 @@
 type Schema<TData> = {
-  parse: (data: unknown) => TData;
+  safeParseAsync(
+    data: unknown
+  ): Promise<{ success: true; data: TData } | { success: false; error: Error }>;
 };
 
 type ConfigDefaults = {
@@ -16,7 +18,10 @@ interface RequestConfig<TData> {
 }
 
 type Response<TData> = {
+  config: RequestConfig<TData>;
+  headers: Headers;
   data: TData;
+  status: number;
 };
 
 type BodyMethod = <TData>(
@@ -44,6 +49,17 @@ interface Zodaxios {
   put: BodyMethod;
 }
 
+export class ZodaxiosError extends Error {
+  constructor(
+    message: string,
+    public readonly config?: RequestConfig<any>,
+    public readonly data?: unknown,
+    public readonly cause?: Error
+  ) {
+    super(message);
+  }
+}
+
 function create(defaults: ConfigDefaults = {}) {
   const zodaxios: Zodaxios = async (configOrUrl, config, method, body) => {
     // zodaxios support both usages:
@@ -67,7 +83,7 @@ function create(defaults: ConfigDefaults = {}) {
       throw new Error('Missing URL. Please see documentation on usage.');
     }
 
-    const headers = {} as Record<string, string>;
+    const headers = new Headers();
 
     const responseType = options.responseType || 'json';
 
@@ -86,29 +102,47 @@ function create(defaults: ConfigDefaults = {}) {
 
     if (body && typeof body === 'object') {
       body = JSON.stringify(body);
-      headers['content-type'] = 'application/json';
+      headers.set('content-type', 'application/json');
     }
 
-    const response = await fetch(config.url, {
+    const res = await fetch(config.url, {
       method,
       body,
       headers,
       credentials: options.withCredentials ? 'include' : undefined
     });
 
-    if (!response.ok) {
-      throw new Error(`Request failed with status ${response.status}`);
+    let response = {
+      config,
+      headers: res.headers,
+      status: res.status,
+      data: undefined as any
+    };
+
+    if (!res.ok) {
+      return Promise.reject({ response });
     }
 
-    let data = undefined;
-
     try {
-      data = await response[responseType]();
+      response.data = await res[responseType]();
     } catch {}
 
-    return {
-      data: options.schema?.parse(data) ?? data
-    };
+    if (responseType === 'json' && options.schema) {
+      let parsed = await options.schema.safeParseAsync(response.data);
+
+      if (!parsed.success) {
+        throw new ZodaxiosError(
+          parsed.error.message,
+          config,
+          response.data,
+          parsed.error
+        );
+      }
+
+      response.data = parsed.data;
+    }
+
+    return response;
   };
 
   zodaxios.create = create;
