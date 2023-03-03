@@ -9,7 +9,7 @@
     "build": "tsup src/index.ts --format cjs,esm --dts",
     "lint": "tsc",
     "test": "vitest",
-    "publish": "changeset publish"
+    "release": "pnpm run build && changeset publish"
   },
   "author": "Peter Mekhaeil",
   "license": "MIT",
