@@ -306,6 +306,26 @@ it('should accept URLSearchParams as params', async () => {
   expect(data).toEqual({ id: '1', name: 'zodaxios' });
 });
 
+it('should support delete request', async () => {
+  server.use(
+    rest.delete('https://example.com', async (req, res, ctx) => {
+      return res(ctx.json({ name: 'zodaxios' }), ctx.status(200));
+    })
+  );
+
+  const api = zodaxios.create({
+    baseURL: 'https://example.com'
+  });
+
+  const schema = z.object({
+    name: z.string()
+  });
+
+  const { data } = await api.delete('/', { schema });
+
+  expect(data).toEqual({ name: 'zodaxios' });
+});
+
 it.skip('should support baseURL when set in instance', async () => {});
 it.skip('should support headers when set in instance', async () => {});
 it.skip('should support auth when set in instance', async () => {});

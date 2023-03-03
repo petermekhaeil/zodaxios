@@ -39,11 +39,12 @@ interface Zodaxios {
   <TData>(
     configOrUrl: RequestConfig<TData> | string,
     config?: RequestConfig<TData>,
-    method?: 'get' | 'post' | 'patch' | 'put',
+    method?: 'get' | 'post' | 'patch' | 'put' | 'delete',
     data?: any
   ): Promise<Response<TData>>;
   create(defaults?: ConfigDefaults): Zodaxios;
   get: BodylessMethod;
+  delete: BodylessMethod;
   post: BodyMethod;
   patch: BodyMethod;
   put: BodyMethod;
@@ -147,6 +148,7 @@ function create(defaults: ConfigDefaults = {}) {
 
   zodaxios.create = create;
   zodaxios.get = (url, config) => zodaxios(url, config, 'get');
+  zodaxios.delete = (url, config) => zodaxios(url, config, 'delete');
   zodaxios.post = (url, data, config) => zodaxios(url, config, 'post', data);
   zodaxios.patch = (url, data, config) => zodaxios(url, config, 'patch', data);
   zodaxios.put = (url, data, config) => zodaxios(url, config, 'put', data);
