@@ -22,6 +22,8 @@ const { data } = await zodaxios('/api', { schema });
 ## Creating an instance
 
 ```js
+import zodaxios from 'zodaxios';
+
 const api = zodaxios.create({
   baseURL: 'https://example.com'
 });
@@ -31,6 +33,68 @@ const schema = z.object({
 });
 
 const { data } = await api.get('/api', { schema });
+```
+
+## Request Methods
+
+### zodaxios.get
+
+```ts
+get(url: string, config: RequestConfig): Promise<Response>;
+```
+
+**Example:**
+
+```js
+const { data } = await api.get('/api');
+```
+
+### zodaxios.post
+
+```ts
+post(url: string, data: any, config: RequestConfig): Promise<Response>;
+```
+
+**Example:**
+
+```js
+const { data } = await api.post('/api', { name: 'zodaxios' });
+```
+
+### zodaxios.put
+
+```ts
+put(url: string, data: any, config: RequestConfig): Promise<Response>;
+```
+
+**Example:**
+
+```js
+const { data } = await api.put('/api', { name: 'zodaxios' });
+```
+
+### zodaxios.patch
+
+```ts
+patch(url: string, data: any, config: RequestConfig): Promise<Response>;
+```
+
+**Example:**
+
+```js
+const { data } = await api.patch('/api', { name: 'zodaxios' });
+```
+
+### zodaxios.delete
+
+```ts
+delete(url: string, config: RequestConfig): Promise<Response>;
+```
+
+**Example:**
+
+```js
+const { data } = await api.delete('/api');
 ```
 
 ## Handling errors
