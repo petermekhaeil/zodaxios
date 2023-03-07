@@ -4,8 +4,13 @@ type Schema<TData> = {
   ): Promise<{ success: true; data: TData } | { success: false; error: Error }>;
 };
 
+type RawHeaders = {
+  [key: string]: string;
+};
+
 type ConfigDefaults = {
   baseURL?: string;
+  headers?: RawHeaders;
 };
 
 interface RequestConfig<TData> {
@@ -15,6 +20,8 @@ interface RequestConfig<TData> {
   method?: 'get' | 'post' | 'patch' | 'put';
   params?: Record<string, string> | URLSearchParams;
   withCredentials?: boolean;
+  baseURL?: string;
+  headers?: RawHeaders;
 }
 
 type Response<TData> = {
@@ -73,7 +80,7 @@ function create(defaults: ConfigDefaults = {}) {
       config = configOrUrl || {};
     }
 
-    const options = {
+    config = {
       ...defaults,
       ...config
     };
@@ -84,33 +91,35 @@ function create(defaults: ConfigDefaults = {}) {
       throw new Error('Missing URL. Please see documentation on usage.');
     }
 
-    const headers = new Headers();
+    const headers: RawHeaders = {};
 
-    const responseType = options.responseType || 'json';
+    const responseType = config.responseType || 'json';
 
-    if (options.baseURL) {
+    if (config.baseURL) {
       config.url = (config.url || '').replace(
         /^(?!.*\/\/)\/?/,
-        options.baseURL + '/'
+        config.baseURL + '/'
       );
     }
 
-    if (options.params) {
+    if (config.params) {
       config.url +=
         (config.url.indexOf('?') === -1 ? '?' : '&') +
-        new URLSearchParams(options.params);
+        new URLSearchParams(config.params);
     }
 
     if (body && typeof body === 'object') {
       body = JSON.stringify(body);
-      headers.set('content-type', 'application/json');
+      headers['content-type'] = 'application/json';
     }
+
+    const mergedHeaders = { ...config.headers, ...headers };
 
     const res = await fetch(config.url, {
       method,
       body,
-      headers,
-      credentials: options.withCredentials ? 'include' : undefined
+      headers: mergedHeaders,
+      credentials: config.withCredentials ? 'include' : undefined
     });
 
     let response = {
@@ -128,8 +137,8 @@ function create(defaults: ConfigDefaults = {}) {
       response.data = await res[responseType]();
     } catch {}
 
-    if (responseType === 'json' && options.schema) {
-      let parsed = await options.schema.safeParseAsync(response.data);
+    if (responseType === 'json' && config.schema) {
+      let parsed = await config.schema.safeParseAsync(response.data);
 
       if (!parsed.success) {
         throw new ZodaxiosError(

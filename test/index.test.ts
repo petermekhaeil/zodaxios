@@ -51,7 +51,11 @@ it('should throw error on 404', async () => {
   try {
     await api.get('/', { schema });
   } catch (e) {
-    expect(e.response.config).toEqual({ schema, url: 'https://example.com/' });
+    expect(e.response.config).toEqual({
+      baseURL: 'https://example.com',
+      schema,
+      url: 'https://example.com/'
+    });
     expect(e.response.status).toEqual(404);
     expect(e.response.headers.get('content-type')).toEqual('application/json');
   }
@@ -326,11 +330,69 @@ it('should support delete request', async () => {
   expect(data).toEqual({ name: 'zodaxios' });
 });
 
+it('should support headers when set in instance', async () => {
+  server.use(
+    rest.get('https://example.com', (req, res, ctx) => {
+      const headers = Object.fromEntries(req.headers.entries());
+      return res(
+        ctx.json(headers),
+        ctx.status(200),
+        ctx.set('X-Test', 'zodaxios')
+      );
+    })
+  );
+
+  const api = zodaxios.create({
+    baseURL: 'https://example.com',
+    headers: {
+      'X-Test': 'zodaxios'
+    }
+  });
+
+  const schema = z.object({
+    'x-test': z.string()
+  });
+
+  const { config, headers } = await api.get('/', { schema });
+
+  expect(config.headers).toEqual({ 'X-Test': 'zodaxios' });
+  expect(headers.get('x-test')).toEqual('zodaxios');
+});
+
+it('should support headers when set in request config', async () => {
+  server.use(
+    rest.get('https://example.com', (req, res, ctx) => {
+      const headers = Object.fromEntries(req.headers.entries());
+      return res(
+        ctx.json(headers),
+        ctx.status(200),
+        ctx.set('X-Test', 'zodaxios')
+      );
+    })
+  );
+
+  const api = zodaxios.create({
+    baseURL: 'https://example.com'
+  });
+
+  const schema = z.object({
+    'x-test': z.string()
+  });
+
+  const { config, headers } = await api.get('/', {
+    schema,
+    headers: {
+      'X-Test': 'zodaxios'
+    }
+  });
+
+  expect(config.headers).toEqual({ 'X-Test': 'zodaxios' });
+  expect(headers.get('x-test')).toEqual('zodaxios');
+});
+
 it.skip('should support baseURL when set in instance', async () => {});
-it.skip('should support headers when set in instance', async () => {});
 it.skip('should support auth when set in instance', async () => {});
 it.skip('should support baseURL when set in request config', async () => {});
-it.skip('should support headers when set in request config', async () => {});
 it.skip('should support auth when set in request config', async () => {});
 it.skip('should support FormData', async () => {});
 it.skip('should support url as first parameter', async () => {});
