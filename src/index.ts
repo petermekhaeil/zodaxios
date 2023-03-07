@@ -13,7 +13,7 @@ type ConfigDefaults = {
   headers?: RawHeaders;
 };
 
-interface RequestConfig<TData> {
+interface RequestConfig<TData = any> {
   schema?: Schema<TData>;
   responseType?: 'json' | 'text';
   url?: string;
@@ -24,7 +24,7 @@ interface RequestConfig<TData> {
   headers?: RawHeaders;
 }
 
-type Response<TData> = {
+type Response<TData = any> = {
   config: RequestConfig<TData>;
   headers: Headers;
   data: TData;
@@ -55,6 +55,10 @@ interface Zodaxios {
   post: BodyMethod;
   patch: BodyMethod;
   put: BodyMethod;
+  interceptors: {
+    request: Interceptor<RequestConfig>;
+    response: Interceptor<Response>;
+  };
 }
 
 export class ZodaxiosError extends Error {
@@ -65,6 +69,25 @@ export class ZodaxiosError extends Error {
     public readonly cause?: Error
   ) {
     super(message);
+  }
+}
+
+class Interceptor<Value> {
+  handlers: Array<{
+    done: (value: Value) => Value;
+    error?: Function;
+  } | null>;
+
+  constructor() {
+    this.handlers = [];
+  }
+
+  use(done: (value: Value) => Value, error?: Function) {
+    return this.handlers.push({ done, error }) - 1;
+  }
+
+  eject(id: number) {
+    this.handlers[id] = null;
   }
 }
 
@@ -94,6 +117,17 @@ function create(defaults: ConfigDefaults = {}) {
     const headers: RawHeaders = {};
 
     const responseType = config.responseType || 'json';
+
+    zodaxios.interceptors.request.handlers.map((handler) => {
+      if (handler && config) {
+        const result = handler.done(config);
+
+        config = {
+          ...config,
+          ...result
+        };
+      }
+    });
 
     if (config.baseURL) {
       config.url = (config.url || '').replace(
@@ -130,12 +164,32 @@ function create(defaults: ConfigDefaults = {}) {
     };
 
     if (!res.ok) {
-      return Promise.reject({ response });
+      zodaxios.interceptors.response.handlers.map((handler) => {
+        if (handler && handler.error) {
+          handler.error(res);
+        }
+      });
+
+      const error = Promise.reject({ response });
+
+      zodaxios.interceptors.request.handlers.map((handler) => {
+        if (handler && handler.error) {
+          handler.error(error);
+        }
+      });
+
+      return error;
     }
 
     try {
       response.data = await res[responseType]();
     } catch {}
+
+    zodaxios.interceptors.response.handlers.map((handler) => {
+      if (handler) {
+        response = handler.done(response);
+      }
+    });
 
     if (responseType === 'json' && config.schema) {
       let parsed = await config.schema.safeParseAsync(response.data);
@@ -161,6 +215,11 @@ function create(defaults: ConfigDefaults = {}) {
   zodaxios.post = (url, data, config) => zodaxios(url, config, 'post', data);
   zodaxios.patch = (url, data, config) => zodaxios(url, config, 'patch', data);
   zodaxios.put = (url, data, config) => zodaxios(url, config, 'put', data);
+
+  zodaxios.interceptors = {
+    request: new Interceptor(),
+    response: new Interceptor()
+  };
 
   return zodaxios;
 }

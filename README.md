@@ -2,11 +2,12 @@
 
 HTTP client with schema validation using [Zod](https://zod.dev/).
 
-- Lightweight using [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch).
-- No dependencies.
-- [Axios](https://github.com/axios/axios) style API.
+- 🚀 Lightweight.
+- 🎉 No dependencies.
+- 🤖 Compatible with [Axios](https://github.com/axios/axios) API.
+- 🔄 Supports Interceptors.
 
-## Usage
+## Example
 
 ```js
 import zodaxios from 'zodaxios';
@@ -54,34 +55,30 @@ try {
 }
 ```
 
-## Request Methods
+## Interceptors
 
-### zodaxios.get
+```js
+// Add a request interceptor
+zodaxios.interceptors.request.use(
+  function (config) {
+    // Do something before request is sent
+    return config;
+  },
+  function (error) {
+    // Do something with request error
+    return Promise.reject(error);
+  }
+);
 
-```ts
-get(url: string, config: RequestConfig): Promise<Response>;
-```
-
-### zodaxios.post
-
-```ts
-post(url: string, data: any, config: RequestConfig): Promise<Response>;
-```
-
-### zodaxios.put
-
-```ts
-put(url: string, data: any, config: RequestConfig): Promise<Response>;
-```
-
-### zodaxios.patch
-
-```ts
-patch(url: string, data: any, config: RequestConfig): Promise<Response>;
-```
-
-### zodaxios.delete
-
-```ts
-delete(url: string, config: RequestConfig): Promise<Response>;
+// Add a response interceptor
+zodaxios.interceptors.response.use(
+  function (response) {
+    // Do something with response data
+    return response;
+  },
+  function (error) {
+    // Do something with response error
+    return Promise.reject(error);
+  }
+);
 ```

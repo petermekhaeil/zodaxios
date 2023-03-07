@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeAll, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import zodaxios, { ZodaxiosError } from '../src/index';
 import { setupServer } from 'msw/node';
@@ -389,6 +389,109 @@ it('should support headers when set in request config', async () => {
   expect(config.headers).toEqual({ 'X-Test': 'zodaxios' });
   expect(headers.get('x-test')).toEqual('zodaxios');
 });
+
+it('should support request interceptors', async () => {
+  server.use(
+    rest.get('https://example.com', (req, res, ctx) => {
+      return res(ctx.json({ name: 'zodaxios' }), ctx.status(200));
+    })
+  );
+
+  const api = zodaxios.create({
+    baseURL: 'https://example.com'
+  });
+
+  const interceptor = api.interceptors.request.use((config) => {
+    config.headers = {
+      ...config.headers,
+      'X-Test': 'zodaxios'
+    };
+    return config;
+  });
+
+  const schema = z.object({
+    name: z.string()
+  });
+
+  const firstRequest = await api.get('/', { schema });
+
+  expect(firstRequest.config.headers).toEqual({ 'X-Test': 'zodaxios' });
+
+  api.interceptors.request.eject(interceptor);
+
+  const secondRequest = await api.get('/', { schema });
+  expect(secondRequest.config.headers?.zodaxios).toEqual(undefined);
+});
+
+it('should support response interceptors', async () => {
+  server.use(
+    rest.get('https://example.com', (req, res, ctx) => {
+      return res(ctx.json({ name: 'zodaxios' }), ctx.status(200));
+    })
+  );
+
+  const api = zodaxios.create({
+    baseURL: 'https://example.com'
+  });
+
+  const interceptor = api.interceptors.response.use((response) => {
+    response.data = { name: 'zodaxios-interceptor' };
+    return response;
+  });
+
+  const schema = z.object({
+    name: z.string()
+  });
+
+  const firstRequest = await api.get('/', { schema });
+
+  expect(firstRequest.data).toEqual({ name: 'zodaxios-interceptor' });
+
+  api.interceptors.response.eject(interceptor);
+
+  const secondRequest = await api.get('/', { schema });
+  expect(secondRequest.data).toEqual({ name: 'zodaxios' });
+});
+
+it('should support response interceptors receiving config intercepted in request', async () => {
+  server.use(
+    rest.get('https://example.com', (req, res, ctx) => {
+      return res(ctx.json({ name: 'zodaxios' }), ctx.status(200));
+    })
+  );
+
+  const mockFn = vi.fn();
+
+  const api = zodaxios.create({
+    baseURL: 'https://example.com'
+  });
+
+  api.interceptors.request.use((config) => {
+    config.headers = {
+      ...config.headers,
+      'X-Test': 'zodaxios'
+    };
+    return config;
+  });
+
+  api.interceptors.response.use((response) => {
+    if (response.config.headers?.['X-Test'] === 'zodaxios') {
+      mockFn();
+    }
+    return response;
+  });
+
+  const schema = z.object({
+    name: z.string()
+  });
+
+  const { config } = await api.get('/', { schema });
+
+  expect(config.headers).toEqual({ 'X-Test': 'zodaxios' });
+  expect(mockFn).toBeCalledTimes(1);
+});
+
+it.skip('should support catching errors in response interceptors', async () => {});
 
 it.skip('should support baseURL when set in instance', async () => {});
 it.skip('should support auth when set in instance', async () => {});
