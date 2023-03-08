@@ -1,5 +1,11 @@
 # zodaxios
 
+## 0.7.0
+
+### Minor Changes
+
+- Add support for interceptors
+
 ## 0.6.0
 
 ### Minor Changes
