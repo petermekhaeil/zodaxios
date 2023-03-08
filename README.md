@@ -16,7 +16,7 @@ const schema = z.object({
   name: z.string()
 });
 
-const { data } = await zodaxios('/api', { schema });
+const { data } = await zodaxios.get('/api', { schema });
 //      ^? { name: string }
 ```
 
@@ -42,7 +42,7 @@ const { data } = await api.get('/api', { schema });
 import zodaxios, { ZodaxiosError } from 'zodaxios';
 
 try {
-  const { data } = await api.get('/api', { schema });
+  const { data } = await zodaxios.get('/api', { schema });
 } catch (error) {
   if (error instanceof ZodaxiosError) {
     // Zod validation failed. The schema did not match
