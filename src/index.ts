@@ -17,11 +17,13 @@ interface RequestConfig<TData = any> {
   schema?: Schema<TData>;
   responseType?: 'json' | 'text';
   url?: string;
-  method?: 'get' | 'post' | 'patch' | 'put';
+  method?: 'get' | 'post' | 'patch' | 'put' | 'delete';
   params?: Record<string, string> | URLSearchParams;
   withCredentials?: boolean;
   baseURL?: string;
   headers?: RawHeaders;
+  // default status >= 200 && status < 300
+  validateStatus?: (status: number) => boolean;
 }
 
 type Response<TData = any> = {
@@ -163,7 +165,11 @@ function create(defaults: ConfigDefaults = {}) {
       data: undefined as any
     };
 
-    if (!res.ok) {
+    const ok = config.validateStatus
+      ? config.validateStatus(res.status)
+      : res.ok;
+
+    if (!ok) {
       zodaxios.interceptors.response.handlers.map((handler) => {
         if (handler && handler.error) {
           handler.error(res);
